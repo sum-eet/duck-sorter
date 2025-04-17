@@ -1,5 +1,3 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 // Game constants
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
@@ -67,8 +65,6 @@ let mouseX = CANVAS_WIDTH / 2;
 let mouseY = CANVAS_HEIGHT / 2;
 
 // Firebase configuration
-// IMPORTANT: Replace this with your actual Firebase configuration from the Firebase Console
-// Go to Firebase Console -> Project Settings -> Your Apps -> Web App -> Config
 const firebaseConfig = {
     apiKey: "AIzaSyDxr9h7hL1Lx5z1ZQZ1ZQZ1ZQZ1ZQZ1ZQZ1",
     authDomain: "duck-game-8f8f8.firebaseapp.com",
@@ -77,11 +73,10 @@ const firebaseConfig = {
     messagingSenderId: "123456789012",
     appId: "1:123456789012:web:1234567890123456789012"
 };
-const analytics = getAnalytics(app);
 
 // Initialize Firebase with compat version
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = firebase.firestore();
 
 // Leaderboard system
 let leaderboard = {};
