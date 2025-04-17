@@ -1,0 +1,21 @@
+{
+  "name": "duck-herding-game",
+  "version": "1.0.0",
+  "description": "A fun browser-based game where you control a dog to herd ducks of the same color together",
+  "private": true,
+  "scripts": {
+    "start": "serve .",
+    "dev": "serve ."
+  },
+  "keywords": [
+    "game",
+    "canvas",
+    "javascript",
+    "html5"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "serve": "^14.0.0"
+  }
+} 

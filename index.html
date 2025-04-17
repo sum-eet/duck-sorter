@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Sorter</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #282C34;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        canvas {
+            background-color: #282C34;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 0;
+            max-height: 90vh;
+            max-width: 100%;
+        }
+        .header {
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+            background-color: #282C34;
+            border-radius: 8px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        @media (max-width: 768px) {
+            canvas {
+                width: 100%;
+                height: auto;
+                max-height: 80vh;
+            }
+            .header {
+                font-size: 14px;
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <!-- Environment Variables -->
+    <script>
+        window.FIREBASE_API_KEY = 'AIzaSyC6bvyAmv3yGhiqGmAXYqd6Xs7ibovebX8';
+        window.FIREBASE_AUTH_DOMAIN = 'duck-sorter.firebaseapp.com';
+        window.FIREBASE_PROJECT_ID = 'duck-sorter';
+        window.FIREBASE_STORAGE_BUCKET = 'duck-sorter.firebasestorage.app';
+        window.FIREBASE_MESSAGING_SENDER_ID = '46858698853';
+        window.FIREBASE_APP_ID = '1:46858698853:web:d9c60e6993de970896468c';
+    </script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Duck Sorter</h1>
+            <p>Click to start and guide the dog to sort the ducks by color</p>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    <script src="reference.js" defer></script>
+</body>
+</html> 
