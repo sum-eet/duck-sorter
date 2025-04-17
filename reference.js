@@ -1,3 +1,5 @@
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 // Game constants
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
@@ -64,25 +66,71 @@ let finalTime = 0;
 let mouseX = CANVAS_WIDTH / 2;
 let mouseY = CANVAS_HEIGHT / 2;
 
+// Firebase configuration
+// IMPORTANT: Replace this with your actual Firebase configuration from the Firebase Console
+// Go to Firebase Console -> Project Settings -> Your Apps -> Web App -> Config
+const firebaseConfig = {
+    apiKey: "AIzaSyC6bvyAmv3yGhiqGmAXYqd6Xs7ibovebX8",
+    authDomain: "duck-sorter.firebaseapp.com",
+    projectId: "duck-sorter",
+    storageBucket: "duck-sorter.firebasestorage.app",
+    messagingSenderId: "46858698853",
+    appId: "1:46858698853:web:1b68890a894bcdbf96468c",
+    measurementId: "G-YSVK3D744G"
+  };
+const analytics = getAnalytics(app);
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 // Leaderboard system
 let leaderboard = {};
 let playerName = "";
+let pollingInterval = null;
 
-// Initialize leaderboard from localStorage if available
-function initializeLeaderboard() {
-    const savedLeaderboard = localStorage.getItem('duckSorterLeaderboard');
-    if (savedLeaderboard) {
-        leaderboard = JSON.parse(savedLeaderboard);
-    } else {
-        // Initialize empty leaderboard for each level
-        for (let i = 1; i <= MAX_LEVEL; i++) {
-            leaderboard[i] = [];
-        }
-    }
-    
+// Initialize leaderboard from Firebase
+async function initializeLeaderboard() {
     // Generate a random player name if not already set
     if (!playerName) {
         playerName = generateRandomPlayerName();
+    }
+    
+    // Start polling for leaderboard updates
+    startPolling();
+    
+    // Initial load of leaderboard data
+    await loadLeaderboardData();
+}
+
+// Start polling for leaderboard updates
+function startPolling() {
+    // Poll every 5 seconds for updates
+    pollingInterval = setInterval(loadLeaderboardData, 5000);
+}
+
+// Load leaderboard data from Firebase
+async function loadLeaderboardData() {
+    try {
+        // Get scores for all levels
+        for (let level = 1; level <= MAX_LEVEL; level++) {
+            const levelScores = await db.collection('scores')
+                .where('level', '==', level)
+                .orderBy('time', 'asc')
+                .limit(10)
+                .get();
+            
+            leaderboard[level] = [];
+            levelScores.forEach(doc => {
+                const data = doc.data();
+                leaderboard[level].push({
+                    name: data.name,
+                    time: data.time
+                });
+            });
+        }
+    } catch (error) {
+        console.error("Error loading leaderboard data:", error);
     }
 }
 
@@ -107,27 +155,21 @@ function generateRandomPlayerName() {
 }
 
 // Add score to leaderboard
-function addScoreToLeaderboard(level, time) {
-    if (!leaderboard[level]) {
-        leaderboard[level] = [];
+async function addScoreToLeaderboard(level, time) {
+    try {
+        // Add score to Firebase
+        await db.collection('scores').add({
+            name: playerName,
+            level: level,
+            time: time,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Reload leaderboard data
+        await loadLeaderboardData();
+    } catch (error) {
+        console.error("Error adding score to leaderboard:", error);
     }
-    
-    // Add new score
-    leaderboard[level].push({
-        name: playerName,
-        time: time
-    });
-    
-    // Sort by time (ascending) - faster times are better
-    leaderboard[level].sort((a, b) => a.time - b.time);
-    
-    // Keep only top 10 scores
-    if (leaderboard[level].length > 10) {
-        leaderboard[level] = leaderboard[level].slice(0, 10);
-    }
-    
-    // Save to localStorage
-    localStorage.setItem('duckSorterLeaderboard', JSON.stringify(leaderboard));
 }
 
 // Get top 3 scores for a level
