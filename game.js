@@ -3,7 +3,7 @@ const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 const DUCK_RADIUS = 12;
 const DOG_RADIUS = 21; // 1.5x bigger than before
-const DOG_SPEED = 400.0;
+const DOG_SPEED = 320.0;
 const DOG_ROTATION_SPEED = 10.0;
 const DOG_ACCELERATION = 5.0;
 const DOG_EFFECT_RADIUS = 150;
@@ -20,7 +20,7 @@ const BOUNDARY_FORCE_STRENGTH = 500;
 const BOUNDARY_BOUNCE_FACTOR = 0.5;
 const CLUSTER_RADIUS_THRESHOLD = 50.0;
 const GROUP_SEPARATION_THRESHOLD = 150.0;
-const DOG_FOLLOW_DISTANCE = 5;
+const DOG_FOLLOW_DISTANCE = 0; // No gap between dog and mouse
 
 // Game boundaries
 const LEFT_BOUND = DUCK_RADIUS * 2;
@@ -58,41 +58,36 @@ const ctx = canvas.getContext('2d');
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
 
-// Initialize ducks
+// Initialize ducks in a circle with random velocities
 function initializeDucks() {
     ducks = [];
-    const numColors = Math.min(currentLevel + 1, COLORS.length);  // Increase colors with level
-    const totalDucks = NUM_DUCKS_PER_COLOR * numColors;
-    const center = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
-    const radius = 150; // Start ducks in a larger circle around the center
+    const numColors = Math.min(currentLevel + 1, MAX_LEVEL);
+    const ducksPerColor = numColors <= 2 ? 5 : 
+                         numColors <= 3 ? 4 : 3;
+    const totalDucks = numColors * ducksPerColor;
     
+    // Create all ducks first
     for (let i = 0; i < totalDucks; i++) {
-        const angle = (2 * Math.PI / totalDucks) * i;
-        const angleWithRandom = angle + (Math.random() * 0.2 - 0.1); // Slight randomness
-        const radiusVar = radius + (Math.random() * 30 - 15);
+        const colorIndex = Math.floor(i / ducksPerColor);
+        const angle = (i * 2 * Math.PI) / totalDucks;
+        const radius = Math.min(CANVAS_WIDTH, CANVAS_HEIGHT) * 0.35;
         
-        const pos = {
-            x: center.x + Math.cos(angleWithRandom) * radiusVar,
-            y: center.y + Math.sin(angleWithRandom) * radiusVar
-        };
-        
-        // Random initial velocity
-        const velAngle = Math.random() * Math.PI * 2;
-        const velMagnitude = 100 + Math.random() * 100; // Higher initial velocity
-        const vel = {
-            x: Math.cos(velAngle) * velMagnitude,
-            y: Math.sin(velAngle) * velMagnitude
-        };
-        
-        const colorIndex = Math.floor(i / NUM_DUCKS_PER_COLOR);
         ducks.push({
-            pos: pos,
-            vel: vel,
+            x: CANVAS_WIDTH / 2 + Math.cos(angle) * radius,
+            y: CANVAS_HEIGHT / 2 + Math.sin(angle) * radius,
+            vx: (Math.random() - 0.5) * 100,
+            vy: (Math.random() - 0.5) * 100,
             color: COLORS[colorIndex],
-            radius: DUCK_RADIUS,
-            mass: 1.0,
-            lastPos: { x: pos.x, y: pos.y } // For collision detection
+            tailAngle: 0,
+            eyeBlink: 0,
+            eyeBlinkTimer: Math.random() * 5
         });
+    }
+    
+    // Shuffle the ducks to intermix colors
+    for (let i = ducks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ducks[i], ducks[j]] = [ducks[j], ducks[i]];
     }
 }
 
@@ -155,7 +150,7 @@ function groupsSeparated() {
         
         // Calculate group center
         group.forEach(duck => {
-            groupCenter = vectorAdd(groupCenter, duck.pos);
+            groupCenter = vectorAdd(groupCenter, duck);
         });
         groupCenter = vectorScale(groupCenter, 1 / group.length);
         centers[color] = groupCenter;
@@ -163,7 +158,7 @@ function groupsSeparated() {
         // Check if all ducks in the group are close to the center
         let maxDistance = 0;
         group.forEach(duck => {
-            const distance = vectorDistance(duck.pos, groupCenter);
+            const distance = vectorDistance(duck, groupCenter);
             maxDistance = Math.max(maxDistance, distance);
         });
         
@@ -207,42 +202,14 @@ function groupsSeparated() {
 // Update game state
 function update(dt) {
     if (gameState === "running") {
-        // Calculate direction to mouse
+        // Move dog directly to mouse position
+        dog.x = mouseX;
+        dog.y = mouseY;
+        
+        // Calculate angle for dog rotation
         const dx = mouseX - dog.x;
         const dy = mouseY - dog.y;
-        const distanceToMouse = Math.sqrt(dx * dx + dy * dy);
-        
-        // Set target angle to point toward mouse
-        dog.targetAngle = Math.atan2(dy, dx);
-        
-        // Smoothly rotate to face mouse (faster rotation)
-        let angleDiff = dog.targetAngle - dog.angle;
-        
-        // Normalize angle difference to [-PI, PI]
-        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-        
-        // Apply smooth rotation with increased speed
-        dog.angle += angleDiff * DOG_ROTATION_SPEED * dt;
-        
-        // Move dog directly towards mouse if beyond follow distance
-        if (distanceToMouse > DOG_FOLLOW_DISTANCE) {
-            // Calculate target velocity
-            const targetVx = (dx / distanceToMouse) * DOG_SPEED;
-            const targetVy = (dy / distanceToMouse) * DOG_SPEED;
-            
-            // Apply smooth acceleration
-            dog.vx += (targetVx - dog.vx) * DOG_ACCELERATION * dt;
-            dog.vy += (targetVy - dog.vy) * DOG_ACCELERATION * dt;
-        } else {
-            // Slow down when close to target
-            dog.vx *= 0.8;
-            dog.vy *= 0.8;
-        }
-        
-        // Update position
-        dog.x += dog.vx * dt;
-        dog.y += dog.vy * dt;
+        dog.angle = Math.atan2(dy, dx);
         
         // Keep dog within bounds
         dog.x = Math.max(DOG_RADIUS, Math.min(CANVAS_WIDTH - DOG_RADIUS, dog.x));
@@ -256,7 +223,7 @@ function update(dt) {
             let acceleration = { x: 0, y: 0 };
             
             // 1. Enhanced repulsion from the dog
-            const toDuck = vectorSubtract(duck.pos, { x: dog.x, y: dog.y });
+            const toDuck = vectorSubtract(duck, { x: dog.x, y: dog.y });
             const distToDog = vectorLength(toDuck);
             
             // Stronger repulsion when very close to dog
@@ -275,7 +242,7 @@ function update(dt) {
             
             ducks.forEach(otherDuck => {
                 if (otherDuck !== duck) {
-                    const diff = vectorSubtract(duck.pos, otherDuck.pos);
+                    const diff = vectorSubtract(duck, otherDuck);
                     const d = vectorLength(diff);
                     
                     if (d < SEPARATION_DISTANCE) {
@@ -301,8 +268,8 @@ function update(dt) {
             const distances = [];
             ducks.forEach(otherDuck => {
                 if (otherDuck !== duck && otherDuck.color === duck.color) {
-                    const d = vectorDistance(duck.pos, otherDuck.pos);
-                    distances.push({ distance: d, pos: otherDuck.pos });
+                    const d = vectorDistance(duck, otherDuck);
+                    distances.push({ distance: d, pos: otherDuck });
                 }
             });
             
@@ -318,7 +285,7 @@ function update(dt) {
                 });
                 
                 avgPos = vectorScale(avgPos, 1 / neighbors.length);
-                const cohesionVector = vectorSubtract(avgPos, duck.pos);
+                const cohesionVector = vectorSubtract(duck, avgPos);
                 acceleration = vectorAdd(
                     acceleration,
                     vectorScale(cohesionVector, COHESION_STRENGTH)
@@ -326,7 +293,7 @@ function update(dt) {
             }
             
             // 4. Ring Attraction: steer back to a target radial distance from the center
-            const radialVector = vectorSubtract(duck.pos, center);
+            const radialVector = vectorSubtract(duck, center);
             const currentDistance = vectorLength(radialVector);
             const error = currentDistance - TARGET_RING_RADIUS;
             const ringForce = vectorScale(
@@ -335,56 +302,79 @@ function update(dt) {
             );
             acceleration = vectorAdd(acceleration, ringForce);
             
-            // 5. Boundary Force: push ducks from the edges if within a margin
-            if (duck.pos.x - LEFT_BOUND < BOUNDARY_MARGIN) {
-                const factor = 1.0 - ((duck.pos.x - LEFT_BOUND) / BOUNDARY_MARGIN);
-                acceleration.x += BOUNDARY_FORCE_STRENGTH * factor;
+            // 5. Enhanced Boundary Force: stronger centripetal force near edges
+            const margin = BOUNDARY_MARGIN;
+            const maxForce = BOUNDARY_FORCE_STRENGTH * 2;
+            
+            if (duck.x < LEFT_BOUND + margin) {
+                const factor = Math.pow(1.0 - ((duck.x - LEFT_BOUND) / margin), 2);
+                acceleration.x += maxForce * factor;
+                // Add centripetal force towards center
+                const toCenter = vectorSubtract(center, duck);
+                const centripetalForce = vectorScale(vectorNormalize(toCenter), maxForce * factor);
+                acceleration = vectorAdd(acceleration, centripetalForce);
             }
-            if (RIGHT_BOUND - duck.pos.x < BOUNDARY_MARGIN) {
-                const factor = 1.0 - ((RIGHT_BOUND - duck.pos.x) / BOUNDARY_MARGIN);
-                acceleration.x -= BOUNDARY_FORCE_STRENGTH * factor;
+            if (RIGHT_BOUND - duck.x < margin) {
+                const factor = Math.pow(1.0 - ((RIGHT_BOUND - duck.x) / margin), 2);
+                acceleration.x -= maxForce * factor;
+                // Add centripetal force towards center
+                const toCenter = vectorSubtract(center, duck);
+                const centripetalForce = vectorScale(vectorNormalize(toCenter), maxForce * factor);
+                acceleration = vectorAdd(acceleration, centripetalForce);
             }
-            if (duck.pos.y - TOP_BOUND < BOUNDARY_MARGIN) {
-                const factor = 1.0 - ((duck.pos.y - TOP_BOUND) / BOUNDARY_MARGIN);
-                acceleration.y += BOUNDARY_FORCE_STRENGTH * factor;
+            if (duck.y < TOP_BOUND + margin) {
+                const factor = Math.pow(1.0 - ((duck.y - TOP_BOUND) / margin), 2);
+                acceleration.y += maxForce * factor;
+                // Add centripetal force towards center
+                const toCenter = vectorSubtract(center, duck);
+                const centripetalForce = vectorScale(vectorNormalize(toCenter), maxForce * factor);
+                acceleration = vectorAdd(acceleration, centripetalForce);
             }
-            if (BOTTOM_BOUND - duck.pos.y < BOUNDARY_MARGIN) {
-                const factor = 1.0 - ((BOTTOM_BOUND - duck.pos.y) / BOUNDARY_MARGIN);
-                acceleration.y -= BOUNDARY_FORCE_STRENGTH * factor;
+            if (BOTTOM_BOUND - duck.y < margin) {
+                const factor = Math.pow(1.0 - ((BOTTOM_BOUND - duck.y) / margin), 2);
+                acceleration.y -= maxForce * factor;
+                // Add centripetal force towards center
+                const toCenter = vectorSubtract(center, duck);
+                const centripetalForce = vectorScale(vectorNormalize(toCenter), maxForce * factor);
+                acceleration = vectorAdd(acceleration, centripetalForce);
             }
             
             // Update velocity (with damping)
-            duck.vel = vectorAdd(duck.vel, vectorScale(acceleration, dt));
+            duck.vx += acceleration.x * dt;
+            duck.vy += acceleration.y * dt;
             
             // Limit speed
-            const speed = vectorLength(duck.vel);
+            const speed = vectorLength({ x: duck.vx, y: duck.vy });
             if (speed > MAX_SPEED) {
-                duck.vel = vectorScaleToLength(duck.vel, MAX_SPEED);
+                duck.vx = (duck.vx / speed) * MAX_SPEED;
+                duck.vy = (duck.vy / speed) * MAX_SPEED;
             }
             
             // Apply damping
-            duck.vel = vectorScale(duck.vel, DAMPING);
+            duck.vx *= DAMPING;
+            duck.vy *= DAMPING;
             
             // Update position only if game is running
             if (gameState === "running") {
-                duck.pos = vectorAdd(duck.pos, vectorScale(duck.vel, dt));
+                duck.x += duck.vx * dt;
+                duck.y += duck.vy * dt;
             }
             
             // Firm boundaries: clamp and bounce off edges
-            if (duck.pos.x < LEFT_BOUND) {
-                duck.pos.x = LEFT_BOUND;
-                duck.vel.x = Math.abs(duck.vel.x) * BOUNDARY_BOUNCE_FACTOR;
-            } else if (duck.pos.x > RIGHT_BOUND) {
-                duck.pos.x = RIGHT_BOUND;
-                duck.vel.x = -Math.abs(duck.vel.x) * BOUNDARY_BOUNCE_FACTOR;
+            if (duck.x < LEFT_BOUND) {
+                duck.x = LEFT_BOUND;
+                duck.vx = Math.abs(duck.vx) * BOUNDARY_BOUNCE_FACTOR;
+            } else if (duck.x > RIGHT_BOUND) {
+                duck.x = RIGHT_BOUND;
+                duck.vx = -Math.abs(duck.vx) * BOUNDARY_BOUNCE_FACTOR;
             }
             
-            if (duck.pos.y < TOP_BOUND) {
-                duck.pos.y = TOP_BOUND;
-                duck.vel.y = Math.abs(duck.vel.y) * BOUNDARY_BOUNCE_FACTOR;
-            } else if (duck.pos.y > BOTTOM_BOUND) {
-                duck.pos.y = BOTTOM_BOUND;
-                duck.vel.y = -Math.abs(duck.vel.y) * BOUNDARY_BOUNCE_FACTOR;
+            if (duck.y < TOP_BOUND) {
+                duck.y = TOP_BOUND;
+                duck.vy = Math.abs(duck.vy) * BOUNDARY_BOUNCE_FACTOR;
+            } else if (duck.y > BOTTOM_BOUND) {
+                duck.y = BOTTOM_BOUND;
+                duck.vy = -Math.abs(duck.vy) * BOUNDARY_BOUNCE_FACTOR;
             }
         });
         
@@ -423,21 +413,21 @@ function draw() {
     ducks.forEach(duck => {
         // Calculate angle for duck orientation
         let angle = 0;
-        if (vectorLength(duck.vel) > 0.1) {
-            angle = Math.atan2(duck.vel.y, duck.vel.x);
+        if (vectorLength({ x: duck.vx, y: duck.vy }) > 0.1) {
+            angle = Math.atan2(duck.vy, duck.vx);
         }
         
         // Draw duck body
         ctx.save();
-        ctx.translate(duck.pos.x, duck.pos.y);
+        ctx.translate(duck.x, duck.y);
         ctx.rotate(angle);
         
         // Body
-        const speedFactor = Math.min(vectorLength(duck.vel) / MAX_SPEED, 1.0);
+        const speedFactor = Math.min(vectorLength({ x: duck.vx, y: duck.vy }) / MAX_SPEED, 1.0);
         const elongation = 1.0 + speedFactor * 0.3; // Max 30% elongation
         
-        const baseLength = duck.radius * 1.8;
-        const baseWidth = duck.radius * 1.2;
+        const baseLength = DUCK_RADIUS * 1.8;
+        const baseWidth = DUCK_RADIUS * 1.2;
         const bodyLength = baseLength * elongation;
         const bodyWidth = baseWidth * (1.0 - speedFactor * 0.2);
         
