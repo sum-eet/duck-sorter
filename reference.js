@@ -64,6 +64,82 @@ let finalTime = 0;
 let mouseX = CANVAS_WIDTH / 2;
 let mouseY = CANVAS_HEIGHT / 2;
 
+// Leaderboard system
+let leaderboard = {};
+let playerName = "";
+
+// Initialize leaderboard from localStorage if available
+function initializeLeaderboard() {
+    const savedLeaderboard = localStorage.getItem('duckSorterLeaderboard');
+    if (savedLeaderboard) {
+        leaderboard = JSON.parse(savedLeaderboard);
+    } else {
+        // Initialize empty leaderboard for each level
+        for (let i = 1; i <= MAX_LEVEL; i++) {
+            leaderboard[i] = [];
+        }
+    }
+    
+    // Generate a random player name if not already set
+    if (!playerName) {
+        playerName = generateRandomPlayerName();
+    }
+}
+
+// Generate a random player name
+function generateRandomPlayerName() {
+    const adjectives = [
+        "Fuzzy", "Urban", "Cosmic", "Digital", "Mystic", "Wild", "Silent", 
+        "Swift", "Clever", "Brave", "Gentle", "Noble", "Royal", "Shadow", 
+        "Golden", "Silver", "Crystal", "Diamond", "Emerald", "Ruby"
+    ];
+    
+    const nouns = [
+        "Duck", "Monkey", "Fox", "Wolf", "Eagle", "Tiger", "Lion", 
+        "Bear", "Hawk", "Falcon", "Owl", "Dragon", "Phoenix", "Unicorn", 
+        "Panda", "Koala", "Penguin", "Dolphin", "Whale", "Shark"
+    ];
+    
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    
+    return `${randomAdjective}${randomNoun}`;
+}
+
+// Add score to leaderboard
+function addScoreToLeaderboard(level, time) {
+    if (!leaderboard[level]) {
+        leaderboard[level] = [];
+    }
+    
+    // Add new score
+    leaderboard[level].push({
+        name: playerName,
+        time: time
+    });
+    
+    // Sort by time (ascending) - faster times are better
+    leaderboard[level].sort((a, b) => a.time - b.time);
+    
+    // Keep only top 10 scores
+    if (leaderboard[level].length > 10) {
+        leaderboard[level] = leaderboard[level].slice(0, 10);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('duckSorterLeaderboard', JSON.stringify(leaderboard));
+}
+
+// Get top 3 scores for a level
+function getTopScores(level) {
+    if (!leaderboard[level] || leaderboard[level].length === 0) {
+        return [];
+    }
+    
+    // Always return top 3 scores, even if there are fewer than 3
+    return leaderboard[level].slice(0, 3);
+}
+
 // Initialize canvas
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -409,6 +485,9 @@ function update(dt) {
         if (groupsSeparated()) {
             gameState = "ended";
             finalTime = timerValue;
+            
+            // Add score to leaderboard
+            addScoreToLeaderboard(currentLevel, finalTime);
         }
     }
 }
@@ -661,6 +740,9 @@ function draw() {
     ctx.fillText(`Time: ${timerValue.toFixed(1)}s`, 20, 30);
     ctx.fillText(`Level: ${currentLevel}`, 20, 60);
     
+    // Draw leaderboard
+    drawLeaderboard();
+    
     if (gameState === "waiting") {
         ctx.font = '36px Arial';
         ctx.textAlign = 'center';
@@ -684,6 +766,38 @@ function draw() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('Move your mouse to control the dog', CANVAS_WIDTH/2, CANVAS_HEIGHT - 20);
+}
+
+// Draw leaderboard
+function drawLeaderboard() {
+    const topScores = getTopScores(currentLevel);
+    
+    // Always show the leaderboard box, even if there are no scores yet
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(CANVAS_WIDTH - 250, 20, 230, 120);
+    
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Top Players - Level ${currentLevel}`, CANVAS_WIDTH - 240, 45);
+    
+    if (topScores.length === 0) {
+        ctx.font = '16px Arial';
+        ctx.fillText('No scores yet!', CANVAS_WIDTH - 240, 70);
+        return;
+    }
+    
+    ctx.font = '16px Arial';
+    
+    for (let i = 0; i < topScores.length; i++) {
+        const score = topScores[i];
+        const y = 70 + i * 30;
+        
+        // Medal emoji for top 3
+        const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : '🥉');
+        
+        ctx.fillText(`${medal} ${score.name}: ${score.time.toFixed(1)}s`, CANVAS_WIDTH - 240, y);
+    }
 }
 
 // Game loop
