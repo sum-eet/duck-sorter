@@ -1,46 +1,41 @@
-# Duck Herding Game Chrome Extension
+# Duck Herding Game
 
-A fun Chrome extension that replaces your new tab page with a duck herding game! Guide the dog to help sort ducks into color-matched groups.
+A fun browser-based game where you control a dog to herd ducks of the same color together.
 
-## Installation
+## Game Description
 
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the folder containing this extension
+In Duck Herding Game, you play as a dog whose task is to separate ducks by color. The game features:
+
+- Multiple levels with increasing difficulty
+- Smooth physics-based duck movement
+- Responsive dog controls
+- Visual feedback for game progress
+- Timer to track your performance
 
 ## How to Play
 
-1. Open a new tab to start the game
+1. Click anywhere to start the game
 2. Move your mouse to control the dog
-3. Guide ducks of the same color into groups
-4. Keep different colored groups separated
-5. Complete each level to unlock more colors
-6. Try to complete all levels with the best time!
+3. Guide ducks of the same color to group together
+4. Keep different colored ducks separated
+5. Complete each level by successfully grouping all ducks of the same color
+6. Progress through increasingly difficult levels with more duck colors
 
-## Game Controls
+## Technologies Used
 
-- Mouse movement: Controls the dog
-- Click: Start game / Proceed to next level
-- The dog will automatically follow your mouse cursor
-- Keep a safe distance from the ducks to guide them effectively
-
-## Features
-
-- Multiple levels with increasing difficulty
-- Smooth physics-based movement
-- Visual feedback for grouping progress
-- Time tracking for speedrun attempts
-- Beautiful animations and graphics
+- HTML5
+- CSS3
+- JavaScript (Canvas API)
+- No external libraries or frameworks
 
 ## Development
 
-Built with vanilla JavaScript and HTML5 Canvas. The game features:
-- Physics-based movement and interactions
-- Flocking behavior for the ducks
-- Smooth animations and transitions
-- Progressive difficulty scaling
+This game is built using vanilla JavaScript and the HTML5 Canvas API. The physics engine is custom-built to simulate realistic duck movement and interactions.
 
-## Credits
+## Deployment
 
-Created as a fun project to demonstrate game development and Chrome extension capabilities. 
+The game is deployed on Vercel and can be played directly in your browser.
+
+## License
+
+MIT 

@@ -7,8 +7,7 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
-            overflow: hidden;
+            padding: 20px;
             background-color: #282C34;
             display: flex;
             flex-direction: column;
@@ -16,10 +15,24 @@
             min-height: 100vh;
             font-family: Arial, sans-serif;
             color: white;
+            box-sizing: border-box;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         canvas {
-            margin-top: 20px;
+            background-color: #1E2127;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            max-width: 100%;
         }
         
         .header {
@@ -27,6 +40,8 @@
             padding: 20px;
             width: 100%;
             background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
         
         .header h1 {
@@ -40,10 +55,6 @@
             opacity: 0.8;
         }
         
-        #gameCanvas {
-            border: 2px solid #464A52;
-        }
-        
         .github-link {
             position: fixed;
             bottom: 20px;
@@ -52,20 +63,40 @@
             text-decoration: none;
             opacity: 0.7;
             transition: opacity 0.3s;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 4px;
         }
         
         .github-link:hover {
             opacity: 1;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Duck Herding Game</h1>
-        <p>Guide the dog to herd ducks of the same color together!</p>
+    <div class="game-container">
+        <div class="header">
+            <h1>Duck Herding Game</h1>
+            <p>Click anywhere to start, then move your mouse to guide the dog!</p>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
     </div>
-    
-    <canvas id="gameCanvas"></canvas>
     
     <a href="https://github.com/sum-eet/duck-sorter" class="github-link" target="_blank">
         View on GitHub
