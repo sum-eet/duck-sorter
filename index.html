@@ -3,86 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Duck Herding Game</title>
+    <title>Duck Sorter</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
-            background-color: #282C34;
+            padding: 0;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            background-color: #282C34;
             font-family: Arial, sans-serif;
-            color: white;
             box-sizing: border-box;
+            overflow: hidden;
         }
-        
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 100vh;
             width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 100%;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
         canvas {
-            background-color: #1E2127;
+            background-color: #282C34;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin: 20px 0;
+            margin: 0;
+            max-height: 90vh;
             max-width: 100%;
         }
-        
         .header {
-            text-align: center;
-            padding: 20px;
-            width: 100%;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        
-        .header p {
-            margin: 10px 0 0;
-            font-size: 16px;
-            opacity: 0.8;
-        }
-        
-        .github-link {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
             color: white;
-            text-decoration: none;
-            opacity: 0.7;
-            transition: opacity 0.3s;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 8px 12px;
-            border-radius: 4px;
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+            background-color: #282C34;
+            border-radius: 8px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
         }
-        
-        .github-link:hover {
-            opacity: 1;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
+            canvas {
+                width: 100%;
+                height: auto;
+                max-height: 80vh;
             }
-            
-            .header h1 {
-                font-size: 20px;
-            }
-            
-            .header p {
+            .header {
                 font-size: 14px;
             }
         }
@@ -91,17 +64,11 @@
 <body>
     <div class="game-container">
         <div class="header">
-            <h1>Duck Herding Game</h1>
-            <p>Click anywhere to start, then move your mouse to guide the dog!</p>
+            <h1>Duck Sorter</h1>
+            <p>Click to start and guide the dog to sort the ducks by color</p>
         </div>
-        
         <canvas id="gameCanvas"></canvas>
     </div>
-    
-    <a href="https://github.com/sum-eet/duck-sorter" class="github-link" target="_blank">
-        View on GitHub
-    </a>
-    
-    <script src="game.js"></script>
+    <script src="reference.js"></script>
 </body>
 </html> 
