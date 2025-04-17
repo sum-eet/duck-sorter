@@ -1,16 +1,5 @@
 {
     "version": 2,
-    "name": "duck-herding-game",
-    "builds": [
-        {
-            "src": "*.html",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "/$1"
-        }
-    ]
+    "public": true,
+    "cleanUrls": true
 } 
