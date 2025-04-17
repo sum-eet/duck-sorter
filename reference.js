@@ -70,19 +70,18 @@ let mouseY = CANVAS_HEIGHT / 2;
 // IMPORTANT: Replace this with your actual Firebase configuration from the Firebase Console
 // Go to Firebase Console -> Project Settings -> Your Apps -> Web App -> Config
 const firebaseConfig = {
-    apiKey: "AIzaSyC6bvyAmv3yGhiqGmAXYqd6Xs7ibovebX8",
-    authDomain: "duck-sorter.firebaseapp.com",
-    projectId: "duck-sorter",
-    storageBucket: "duck-sorter.firebasestorage.app",
-    messagingSenderId: "46858698853",
-    appId: "1:46858698853:web:1b68890a894bcdbf96468c",
-    measurementId: "G-YSVK3D744G"
-  };
+    apiKey: "AIzaSyDxr9h7hL1Lx5z1ZQZ1ZQZ1ZQZ1ZQZ1ZQZ1",
+    authDomain: "duck-game-8f8f8.firebaseapp.com",
+    projectId: "duck-game-8f8f8",
+    storageBucket: "duck-game-8f8f8.appspot.com",
+    messagingSenderId: "123456789012",
+    appId: "1:123456789012:web:1234567890123456789012"
+};
 const analytics = getAnalytics(app);
 
-// Initialize Firebase
+// Initialize Firebase with compat version
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db = firebase.database();
 
 // Leaderboard system
 let leaderboard = {};
