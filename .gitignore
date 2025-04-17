@@ -1,0 +1,22 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Generated files
+icons/*.png
+node_modules/
+*.log
+
+# Chrome Extension packaging
+*.crx
+*.pem
+*.zip
