@@ -1,12 +1,19 @@
 // Game constants
 const CANVAS_WIDTH = Math.min(window.innerWidth, 1200); // Cap maximum width
 const CANVAS_HEIGHT = Math.min(window.innerHeight, 800); // Cap maximum height
+const IS_MOBILE = window.innerWidth <= 768;
 console.log('Script loaded, window dimensions:', CANVAS_WIDTH, CANVAS_HEIGHT);
-const DUCK_RADIUS = Math.max(window.innerWidth / 80, 12);  // Responsive duck size
-const DOG_RADIUS = DUCK_RADIUS * 1.75;   // Dog is 1.75x bigger than ducks
-const MAX_SPEED = 800.0; // Maximum speed for ducks
+
+// Responsive sizes based on device
+const DUCK_RADIUS = IS_MOBILE 
+    ? Math.min(window.innerWidth / 100, 8)  // Smaller on mobile (max 8px)
+    : Math.max(window.innerWidth / 80, 12); // Larger on desktop (min 12px)
+const DOG_RADIUS = IS_MOBILE
+    ? DUCK_RADIUS * 1.5  // Smaller difference on mobile
+    : DUCK_RADIUS * 1.75; // Larger difference on desktop
+const MAX_SPEED = IS_MOBILE ? 600.0 : 800.0; // Slower maximum speed on mobile
 const DAMPING = 0.98;    // Damping factor (less damping = more bouncy)
-const DOG_SPEED = 800.0;
+const DOG_SPEED = IS_MOBILE ? 600.0 : 800.0; // Slower dog speed on mobile
 const DOG_FOLLOW_DISTANCE = 0.3; // Maximum distance from cursor (0.3mm)
 const DOG_ROTATION_SPEED = 12.0;
 const DOG_ACCELERATION = 12.0;
@@ -34,16 +41,16 @@ function generatePlayerName() {
 }
 
 // Repulsion (player/dog) parameters
-const DOG_EFFECT_RADIUS = 180.0;  // When player is within this radius, repulsion activates
+const DOG_EFFECT_RADIUS = IS_MOBILE ? 140.0 : 180.0; // Smaller effect radius on mobile
 const DOG_REPULSION_STRENGTH = 6000.0;  // Increased repulsion strength to prevent overlaps
 
 // Inter-boid forces
-const SEPARATION_DISTANCE = 40.0;  // Increased minimum allowed distance between ducks
+const SEPARATION_DISTANCE = IS_MOBILE ? 30.0 : 40.0; // Smaller separation on mobile
 const SEPARATION_STRENGTH = 150.0;  // Increased force to keep ducks separate
 const COHESION_STRENGTH = 0.005;  // Attraction toward nearby boids
 
 // Ring (center) attraction – ducks try to keep to an orbit (target ring radius)
-const TARGET_RING_RADIUS = 128.0;  // Doubled from 64 to make the center circle larger
+const TARGET_RING_RADIUS = IS_MOBILE ? 96.0 : 128.0; // Smaller ring on mobile
 const RING_ATTRACTION_STRENGTH = 0.5;
 
 // Boundary parameters
@@ -51,13 +58,13 @@ const LEFT_BOUND = DUCK_RADIUS;
 const RIGHT_BOUND = CANVAS_WIDTH - DUCK_RADIUS;
 const TOP_BOUND = DUCK_RADIUS;
 const BOTTOM_BOUND = CANVAS_HEIGHT - DUCK_RADIUS;
-const BOUNDARY_MARGIN = 20;
+const BOUNDARY_MARGIN = IS_MOBILE ? 15 : 20; // Smaller margins on mobile
 const BOUNDARY_FORCE_STRENGTH = 3500.0;  // Extra force when too close to edge
 const BOUNDARY_BOUNCE_FACTOR = 1.05;  // On collision, bounce with slightly amplified speed
 
 // Grouping (win condition) criteria
-const CLUSTER_RADIUS_THRESHOLD = 80.0;  // Increased from 50 to account for stronger separation
-const GROUP_SEPARATION_THRESHOLD = 200.0;  // Increased from 150 to account for larger play area
+const CLUSTER_RADIUS_THRESHOLD = IS_MOBILE ? 60.0 : 80.0; // Smaller clusters on mobile
+const GROUP_SEPARATION_THRESHOLD = IS_MOBILE ? 150.0 : 200.0; // Smaller separation on mobile
 
 // Game state
 let dog = {
@@ -174,10 +181,13 @@ function initCanvas() {
 
 // Adjust game elements based on screen size
 function adjustGameElementsForScreenSize() {
-    // Adjust text sizes
-    const baseFontSize = Math.min(window.innerWidth / 50, 24);
-    const smallFontSize = Math.max(baseFontSize * 0.75, 14);
-    const largeFontSize = Math.max(baseFontSize * 1.5, 36);
+    const isMobile = window.innerWidth <= 768;
+    // Adjust text sizes with smaller base size for mobile
+    const baseFontSize = isMobile 
+        ? Math.min(window.innerWidth / 60, 18) 
+        : Math.min(window.innerWidth / 50, 24);
+    const smallFontSize = Math.max(baseFontSize * 0.75, isMobile ? 12 : 14);
+    const largeFontSize = Math.max(baseFontSize * 1.5, isMobile ? 24 : 36);
     
     // Update font sizes in draw function
     ctx.font = `${baseFontSize}px Arial`;
@@ -233,22 +243,25 @@ function initializeDucks() {
     const numColors = Math.min(currentLevel + 1, COLORS.length);
     const totalDucks = NUM_DUCKS_PER_COLOR * numColors;
     const center = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
-    const radius = 150; // Start ducks in a larger circle around the center
+    // Smaller initial circle on mobile
+    const radius = IS_MOBILE ? 120 : 150;
     
-    // Create ducks in alternating color pattern
+    // Create ducks with adjusted initial velocities for mobile
     for (let i = 0; i < totalDucks; i++) {
         const angle = (2 * Math.PI / totalDucks) * i;
-        const angleWithRandom = angle + (Math.random() * 0.2 - 0.1); // Slight randomness
-        const radiusVar = radius + (Math.random() * 30 - 15);
+        const angleWithRandom = angle + (Math.random() * 0.2 - 0.1);
+        const radiusVar = radius + (Math.random() * (IS_MOBILE ? 20 : 30) - (IS_MOBILE ? 10 : 15));
         
         const pos = {
             x: center.x + Math.cos(angleWithRandom) * radiusVar,
             y: center.y + Math.sin(angleWithRandom) * radiusVar
         };
         
-        // Random initial velocity
+        // Slower initial velocity on mobile
+        const velMagnitude = IS_MOBILE 
+            ? 75 + Math.random() * 75  // Lower velocity range for mobile
+            : 100 + Math.random() * 100;
         const velAngle = Math.random() * Math.PI * 2;
-        const velMagnitude = 100 + Math.random() * 100; // Higher initial velocity
         const vel = {
             x: Math.cos(velAngle) * velMagnitude,
             y: Math.sin(velAngle) * velMagnitude
@@ -818,7 +831,7 @@ function draw() {
     ctx.fillStyle = 'white';
     ctx.font = window.gameFonts.normal;
     ctx.textAlign = 'left';
-    const padding = Math.max(CANVAS_WIDTH / 50, 20);
+    const padding = IS_MOBILE ? Math.max(CANVAS_WIDTH / 60, 15) : Math.max(CANVAS_WIDTH / 50, 20);
     
     if (gameState === "waiting") {
         ctx.fillText("Tap to start", padding, padding + 10);
@@ -829,7 +842,9 @@ function draw() {
     }
     
     // Draw leaderboard with responsive positioning
-    const leaderboardWidth = Math.min(CANVAS_WIDTH * 0.3, 230);
+    const leaderboardWidth = IS_MOBILE 
+        ? Math.min(CANVAS_WIDTH * 0.4, 180) // Wider but not too wide on mobile
+        : Math.min(CANVAS_WIDTH * 0.3, 230);
     const leaderboardX = CANVAS_WIDTH - leaderboardWidth - padding;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(leaderboardX, padding, leaderboardWidth, 120);
