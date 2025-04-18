@@ -166,16 +166,75 @@ async function saveScore(time) {
     }
 }
 
+// Initialize canvas
+let canvas;
+let ctx;
+
 // Initialize canvas with responsive sizing
 function initCanvas() {
+    canvas = document.getElementById('gameCanvas');
+    if (!canvas) {
+        console.error('Could not find canvas element!');
+        return;
+    }
+    ctx = canvas.getContext('2d');
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
+    console.log('Canvas dimensions set to:', canvas.width, canvas.height);
+
     // Make canvas responsive to window resizes
     window.addEventListener('resize', () => {
         canvas.width = Math.min(window.innerWidth, 1200);
         canvas.height = Math.min(window.innerHeight, 800);
         // Adjust game elements for new size
         adjustGameElementsForScreenSize();
+    });
+
+    // Add touch event listeners
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchend', (e) => {
+        // Handle touch end for game state changes
+        if (gameState === "waiting") {
+            gameState = "running";
+            startTime = Date.now();
+        } else if (gameState === "ended") {
+            if (currentLevel < MAX_LEVEL) {
+                currentLevel++;
+                initializeLeaderboard();
+            } else {
+                currentLevel = 1;
+                initializeLeaderboard();
+            }
+            gameState = "running";
+            timerValue = 0;
+            initializeDucks();
+        }
+    });
+
+    // Add mouse movement handler
+    canvas.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // Add click handler
+    canvas.addEventListener('click', (e) => {
+        if (gameState === "waiting") {
+            gameState = "running";
+            startTime = Date.now();
+        } else if (gameState === "ended") {
+            if (currentLevel < MAX_LEVEL) {
+                currentLevel++;
+                initializeLeaderboard();
+            } else {
+                currentLevel = 1;
+                initializeLeaderboard();
+            }
+            gameState = "running";
+            timerValue = 0;
+            initializeDucks();
+        }
     });
 }
 
@@ -209,33 +268,6 @@ function handleTouch(e) {
         mouseY = touch.clientY - rect.top;
     }
 }
-
-// Add touch event listeners
-canvas.addEventListener('touchstart', handleTouch);
-canvas.addEventListener('touchmove', handleTouch);
-canvas.addEventListener('touchend', (e) => {
-    // Handle touch end for game state changes
-    if (gameState === "waiting") {
-        gameState = "running";
-        startTime = Date.now();
-    } else if (gameState === "ended") {
-        if (currentLevel < MAX_LEVEL) {
-            currentLevel++;
-            initializeLeaderboard();
-        } else {
-            currentLevel = 1;
-            initializeLeaderboard();
-        }
-        gameState = "running";
-        timerValue = 0;
-        initializeDucks();
-    }
-});
-
-// Initialize canvas
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-console.log('Canvas dimensions set to:', canvas.width, canvas.height);
 
 // Initialize ducks
 function initializeDucks() {
@@ -937,37 +969,17 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Handle mouse movement
-canvas.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-});
-
-// Handle mouse click
-canvas.addEventListener('click', (e) => {
-    if (gameState === "waiting") {
-        gameState = "running";
-        startTime = Date.now();
-    } else if (gameState === "ended") {
-        if (currentLevel < MAX_LEVEL) {
-            currentLevel++;
-            initializeLeaderboard(); // Load new level's top scores
-        } else {
-            currentLevel = 1; // Reset to level 1
-            initializeLeaderboard(); // Load level 1's top scores
-        }
-        gameState = "running";
-        timerValue = 0;
-        initializeDucks();
-    }
-});
-
 // Initialize game with responsive setup
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
     
     // Initialize canvas with responsive sizing
     initCanvas();
+    if (!canvas || !ctx) {
+        console.error('Failed to initialize canvas');
+        return;
+    }
+    
     adjustGameElementsForScreenSize();
     
     try {
