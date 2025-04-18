@@ -1,9 +1,9 @@
 // Game constants
-const CANVAS_WIDTH = window.innerWidth;
-const CANVAS_HEIGHT = window.innerHeight;
+const CANVAS_WIDTH = Math.min(window.innerWidth, 1200); // Cap maximum width
+const CANVAS_HEIGHT = Math.min(window.innerHeight, 800); // Cap maximum height
 console.log('Script loaded, window dimensions:', CANVAS_WIDTH, CANVAS_HEIGHT);
-const DUCK_RADIUS = 12;  // Smaller ducks
-const DOG_RADIUS = 21;   // 1.5x bigger dog (was 14)
+const DUCK_RADIUS = Math.max(window.innerWidth / 80, 12);  // Responsive duck size
+const DOG_RADIUS = DUCK_RADIUS * 1.75;   // Dog is 1.75x bigger than ducks
 const MAX_SPEED = 800.0; // Maximum speed for ducks
 const DAMPING = 0.98;    // Damping factor (less damping = more bouncy)
 const DOG_SPEED = 800.0;
@@ -159,11 +159,72 @@ async function saveScore(time) {
     }
 }
 
+// Initialize canvas with responsive sizing
+function initCanvas() {
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    // Make canvas responsive to window resizes
+    window.addEventListener('resize', () => {
+        canvas.width = Math.min(window.innerWidth, 1200);
+        canvas.height = Math.min(window.innerHeight, 800);
+        // Adjust game elements for new size
+        adjustGameElementsForScreenSize();
+    });
+}
+
+// Adjust game elements based on screen size
+function adjustGameElementsForScreenSize() {
+    // Adjust text sizes
+    const baseFontSize = Math.min(window.innerWidth / 50, 24);
+    const smallFontSize = Math.max(baseFontSize * 0.75, 14);
+    const largeFontSize = Math.max(baseFontSize * 1.5, 36);
+    
+    // Update font sizes in draw function
+    ctx.font = `${baseFontSize}px Arial`;
+    // Store these for use in draw function
+    window.gameFonts = {
+        small: `${smallFontSize}px Arial`,
+        normal: `${baseFontSize}px Arial`,
+        large: `${largeFontSize}px Arial`
+    };
+}
+
+// Handle touch events
+function handleTouch(e) {
+    e.preventDefault(); // Prevent scrolling
+    const touch = e.touches[0];
+    if (touch) {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = touch.clientX - rect.left;
+        mouseY = touch.clientY - rect.top;
+    }
+}
+
+// Add touch event listeners
+canvas.addEventListener('touchstart', handleTouch);
+canvas.addEventListener('touchmove', handleTouch);
+canvas.addEventListener('touchend', (e) => {
+    // Handle touch end for game state changes
+    if (gameState === "waiting") {
+        gameState = "running";
+        startTime = Date.now();
+    } else if (gameState === "ended") {
+        if (currentLevel < MAX_LEVEL) {
+            currentLevel++;
+            initializeLeaderboard();
+        } else {
+            currentLevel = 1;
+            initializeLeaderboard();
+        }
+        gameState = "running";
+        timerValue = 0;
+        initializeDucks();
+    }
+});
+
 // Initialize canvas
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = CANVAS_WIDTH;
-canvas.height = CANVAS_HEIGHT;
 console.log('Canvas dimensions set to:', canvas.width, canvas.height);
 
 // Initialize ducks
@@ -514,12 +575,13 @@ function update(dt) {
 // Draw game state
 function draw() {
     // Clear canvas
-    ctx.fillStyle = '#282C34'; // Dark background
+    ctx.fillStyle = '#282C34';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Draw subtle boundary
-    ctx.strokeStyle = '#464A52'; // Subtle boundary color
-    ctx.lineWidth = 2;
+    // Draw subtle boundary with responsive stroke width
+    const boundaryWidth = Math.max(CANVAS_WIDTH / 500, 2);
+    ctx.strokeStyle = '#464A52';
+    ctx.lineWidth = boundaryWidth;
     ctx.strokeRect(
         LEFT_BOUND, 
         TOP_BOUND, 
@@ -527,16 +589,16 @@ function draw() {
         BOTTOM_BOUND - TOP_BOUND
     );
     
-    // Draw target ring with timer in center
+    // Draw target ring with responsive size
     ctx.beginPath();
     ctx.arc(CANVAS_WIDTH/2, CANVAS_HEIGHT/2, TARGET_RING_RADIUS, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = boundaryWidth;
     ctx.stroke();
     
-    // Draw timer in center of the ring
+    // Draw timer with responsive font
     ctx.fillStyle = 'white';
-    ctx.font = 'bold 36px Arial';
+    ctx.font = window.gameFonts.large;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${timerValue.toFixed(1)}s`, CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
@@ -752,64 +814,66 @@ function draw() {
     
     ctx.restore();
     
-    // Draw timer and player name
+    // Draw UI elements with responsive fonts
     ctx.fillStyle = 'white';
-    ctx.font = '24px Arial';
+    ctx.font = window.gameFonts.normal;
     ctx.textAlign = 'left';
-    if (gameState === "waiting") {
-        ctx.fillText("Enter your name:", 20, 30);
-        // Draw name input box
-        ctx.strokeStyle = 'white';
-        ctx.strokeRect(20, 40, 200, 30);
-        ctx.fillText(playerName, 25, 60);
-    } else {
-        ctx.fillText(`Player: ${playerName}`, 20, 30);
-        ctx.fillText(`Time: ${timerValue.toFixed(1)}s`, 20, 60);
-        ctx.fillText(`Level: ${currentLevel}`, 20, 90);
-    }
-
-    // Draw leaderboard
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(CANVAS_WIDTH - 250, 20, 230, 120);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 18px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Top Players - Level ${currentLevel}`, CANVAS_WIDTH - 240, 45);
+    const padding = Math.max(CANVAS_WIDTH / 50, 20);
     
-    ctx.font = '16px Arial';
+    if (gameState === "waiting") {
+        ctx.fillText("Tap to start", padding, padding + 10);
+    } else {
+        ctx.fillText(`Player: ${playerName}`, padding, padding + 10);
+        ctx.fillText(`Time: ${timerValue.toFixed(1)}s`, padding, padding * 2 + 10);
+        ctx.fillText(`Level: ${currentLevel}`, padding, padding * 3 + 10);
+    }
+    
+    // Draw leaderboard with responsive positioning
+    const leaderboardWidth = Math.min(CANVAS_WIDTH * 0.3, 230);
+    const leaderboardX = CANVAS_WIDTH - leaderboardWidth - padding;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(leaderboardX, padding, leaderboardWidth, 120);
+    
+    ctx.fillStyle = 'white';
+    ctx.font = window.gameFonts.normal;
+    ctx.textAlign = 'left';
+    ctx.fillText(`Top Players - Level ${currentLevel}`, leaderboardX + 10, padding * 2);
+    
+    ctx.font = window.gameFonts.small;
     if (topScores[currentLevel] && topScores[currentLevel].length > 0) {
         topScores[currentLevel].forEach((score, index) => {
-            const y = 70 + index * 30;
+            const y = padding * 3 + index * (padding + 5);
             const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
-            ctx.fillText(`${medal} ${score.name}: ${score.time.toFixed(1)}s`, CANVAS_WIDTH - 240, y);
+            ctx.fillText(`${medal} ${score.name}: ${score.time.toFixed(1)}s`, leaderboardX + 10, y);
         });
     } else {
-        ctx.fillText('No scores yet!', CANVAS_WIDTH - 240, 70);
+        ctx.fillText('No scores yet!', leaderboardX + 10, padding * 3);
     }
     
+    // Game state messages
     if (gameState === "waiting") {
-        ctx.font = '36px Arial';
+        ctx.font = window.gameFonts.large;
         ctx.textAlign = 'center';
-        ctx.fillText('Click to start', CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+        ctx.fillText('Tap to start', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + TARGET_RING_RADIUS + padding);
     } else if (gameState === "ended") {
-        ctx.font = '36px Arial';
+        ctx.font = window.gameFonts.large;
         ctx.textAlign = 'center';
-        ctx.fillText(`Level ${currentLevel} Complete! Time: ${finalTime.toFixed(1)}s`, CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+        ctx.fillText(`Level ${currentLevel} Complete! Time: ${finalTime.toFixed(1)}s`, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + TARGET_RING_RADIUS + padding);
         
+        ctx.font = window.gameFonts.normal;
         if (currentLevel < MAX_LEVEL) {
-            ctx.font = '24px Arial';
-            ctx.fillText('Click to start next level', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 40);
+            ctx.fillText('Tap to start next level', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + TARGET_RING_RADIUS + padding * 2);
         } else {
-            ctx.font = '24px Arial';
-            ctx.fillText('Game Complete! Click to restart', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 40);
+            ctx.fillText('Game Complete! Tap to restart', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + TARGET_RING_RADIUS + padding * 2);
         }
     }
     
-    // Draw instructions
+    // Instructions
     ctx.fillStyle = 'white';
-    ctx.font = '16px Arial';
+    ctx.font = window.gameFonts.small;
     ctx.textAlign = 'center';
-    ctx.fillText('Move your mouse to control the dog', CANVAS_WIDTH/2, CANVAS_HEIGHT - 20);
+    ctx.fillText(window.innerWidth <= 768 ? 'Touch and drag to control the dog' : 'Move your mouse to control the dog', 
+        CANVAS_WIDTH/2, CANVAS_HEIGHT - padding);
 }
 
 // Game loop
@@ -883,28 +947,15 @@ canvas.addEventListener('click', (e) => {
     }
 });
 
-// Initialize game
+// Initialize game with responsive setup
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
     
-    // Initialize canvas
-    const canvas = document.getElementById('gameCanvas');
-    console.log('Canvas element:', canvas);
+    // Initialize canvas with responsive sizing
+    initCanvas();
+    adjustGameElementsForScreenSize();
     
-    if (!canvas) {
-        console.error('Could not find canvas element!');
-        return;
-    }
-    
-    const ctx = canvas.getContext('2d');
-    console.log('Canvas context:', ctx);
-    
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
-    console.log('Canvas dimensions set to:', canvas.width, canvas.height);
-
     try {
-        // Initialize game
         console.log('Initializing leaderboard...');
         await initializeLeaderboard();
         console.log('Leaderboard initialized');
